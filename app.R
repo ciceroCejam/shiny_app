@@ -1,49 +1,49 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
+library(ggplot2)
+library(babynames)
+library(magrittr)
 
-# Define UI for application that draws a histogram
+
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
+  
+  shinythemes::themeSelector(),
+  
+  titlePanel("Explorando os nomes de Bebês"),
+  sidebarLayout(
+    sidebarPanel(
+      textInput('name', 'Enter Name', 'David')
+    ),
+    mainPanel(
+      tabsetPanel(
+        tabPanel('Tendência',
+          plotOutput('trend')
+          ),
+        tabPanel('Tabela',
+          DT::DTOutput("babynames_table")
+          )
+      )
     )
+  )
 )
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
-    })
+server <- function(input, output){
+  output$trend <- renderPlot({
+    data_name <- subset(
+      babynames, name == input$name
+    )
+    ggplot(data_name)+
+      geom_line(
+        aes(x = year, y = prop, color = sex)
+      )
+  })
+  output$babynames_table <- DT::renderDT({
+    table_name <- subset(
+      babynames, name == input$name
+    )
+    table_name %>% 
+      dplyr::sample_frac(.1)
+  })
+  
 }
 
-# Run the application 
 shinyApp(ui = ui, server = server)
